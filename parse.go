@@ -222,11 +222,47 @@ func (e *Entry) setSize(str string) (err error) {
 	return
 }
 
+func parseSpecMonthDay(fields[]string) (string, string, error) {
+	if len(fields[0]) < 2 {
+		return "", "", errUnsupportedListLine
+	}
+	if fields[0][0] < '0' &&fields[0][1] > '9' {
+		return "", "", errUnsupportedListLine
+	}
+	month := "0" + fields[0][:1]
+	if fields[0][0] == '0' || fields[0][0] == '1' {
+		if fields[0][1] >= '0' && fields[0][1] <= '9' {
+			month = fields[0][:2]
+		}
+	}
+	if len(fields[1]) < 2 {
+		return "", "", errUnsupportedListLine
+	}
+	if fields[1][0] < '0' &&fields[1][1] > '9' {
+		return "", "", errUnsupportedListLine
+	}
+	day := "0" + fields[1][:1]
+	if fields[1][0] >= '0' && fields[1][0] <= '3' {
+		if fields[1][1] >= '0' &&fields[1][1] <= '9' {
+			day = fields[1][:2]
+		}
+	}
+	return month, day, nil
+}
+
 func (e *Entry) setTime(fields []string, now time.Time, loc *time.Location) (err error) {
 	if strings.Contains(fields[2], ":") { // contains time
 		thisYear, _, _ := now.Date()
 		timeStr := fmt.Sprintf("%s %s %d %s", fields[1], fields[0], thisYear, fields[2])
 		e.Time, err = time.ParseInLocation("_2 Jan 2006 15:04", timeStr, loc)
+
+		if err != nil {
+			month, day, errParse := parseSpecMonthDay(fields)
+			if errParse == nil {
+				timeStr = fmt.Sprintf("%s %s %d %s", month, day, thisYear, fields[2])
+				e.Time, err = time.ParseInLocation("01 02 2006 15:04", timeStr, loc)
+			}
+		}
 
 		/*
 			On unix, `info ls` shows:
@@ -250,6 +286,14 @@ func (e *Entry) setTime(fields []string, now time.Time, loc *time.Location) (err
 		}
 		timeStr := fmt.Sprintf("%s %s %s 00:00", fields[1], fields[0], fields[2])
 		e.Time, err = time.ParseInLocation("_2 Jan 2006 15:04", timeStr, loc)
+
+		if err != nil && strings.ContainsRune(fields[0], '月') && strings.ContainsRune(fields[1], '日') {
+			month, day, errParse := parseSpecMonthDay(fields)
+			if errParse == nil {
+				timeStr = fmt.Sprintf("%s %s %s", month, day, fields[2])
+				e.Time, err = time.ParseInLocation("01 02 2006", timeStr, loc)
+			}
+		}
 	}
 	return
 }

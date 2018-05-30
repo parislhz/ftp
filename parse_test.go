@@ -68,6 +68,7 @@ var listTests = []line{
 
 	// Odd link count from hostedftp.com
 	{"-r--------   0 user group     65222236 Feb 24 00:39 RegularFile", "RegularFile", 65222236, EntryTypeFile, newTime(thisYear, time.February, 24, 0, 39)},
+	{"drwxr-xr-x 2307 root     root        2307  5月 13日 00:24 2018-05-13", "2018-05-13", 0, EntryTypeFolder, newTime(2017, time.May, 13, 00, 24)},
 }
 
 // Not supported, we expect a specific error message
